@@ -71,12 +71,12 @@ class ExprListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by ExprParser#declaracaoFor.
-    def enterDeclaracaoFor(self, ctx:ExprParser.DeclaracaoForContext):
+    # Enter a parse tree produced by ExprParser#forInit.
+    def enterForInit(self, ctx:ExprParser.ForInitContext):
         pass
 
-    # Exit a parse tree produced by ExprParser#declaracaoFor.
-    def exitDeclaracaoFor(self, ctx:ExprParser.DeclaracaoForContext):
+    # Exit a parse tree produced by ExprParser#forInit.
+    def exitForInit(self, ctx:ExprParser.ForInitContext):
         pass
 
 

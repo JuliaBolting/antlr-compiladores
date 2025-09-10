@@ -20,9 +20,11 @@ comandoIf : IF PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2 (ELSE (comandoIf 
 
 comandoWhile : WHILE PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2;
 
-comandoFor : FOR PAREN1 (declaracaoFor PVIRG | comandoAtribuicao | PVIRG) expressao? PVIRG comandoAtribuicao? PAREN2 CHAVE1 comandos* CHAVE2;
+comandoFor : FOR PAREN1 forInit expressao PVIRG comandoAtribuicao PAREN2 CHAVE1 comandos* CHAVE2;
 
-declaracaoFor : tipo ID ATRIB expressao; // Declaração sem PVIRG para o for
+forInit : tipo ID ATRIB expressao PVIRG // Declaração com PVIRG
+        | ID ATRIB expressao PVIRG      // Atribuição
+        | PVIRG;                        // Inicialização vazia
 
 comandoAtribuicao : ID ATRIB expressao PVIRG
                   | ID COLCH1 expressao COLCH2 ATRIB expressao PVIRG;
@@ -33,10 +35,11 @@ comandoScanf : SCANF PAREN1 TEXTO VIRG ID PAREN2 PVIRG;
 
 comandoReturn : RETURN expressao? PVIRG;
 
-expressao : expressao (SOMA | SUB) expressao
-          | expressao (MUL | DIV | RESTO) expressao
+expressao : expressao AND expressao
+          | expressao OR expressao
           | expressao (EQ | NEQ | LE | LT | GE | GT) expressao
-          | expressao (AND | OR) expressao
+          | expressao (SOMA | SUB) expressao
+          | expressao (MUL | DIV | RESTO) expressao
           | PAREN1 expressao PAREN2
           | NUM_INT
           | NUM_DEC
