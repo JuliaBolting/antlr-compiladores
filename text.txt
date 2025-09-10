@@ -1,0 +1,43 @@
+// Programa exemplo usando todos os símbolos do PDF
+
+void main() {
+    // Declaração de variáveis
+    int a = 10;
+    float b = 3.14;
+    char c = "x";
+    boolean cond = true;
+
+    // Operadores aritméticos
+    a = a + 1;
+    a = a - 2;
+    a = a * 3;
+    a = a / 4;
+    a = a % 5;
+
+    // Estruturas de decisão
+    if (a > 0 && b >= 1.0) {
+        println("a é positivo e b >= 1.0");
+    } else if (a == 0 || b <= 0.0) {
+        println("a == 0 ou b <= 0");
+    } else {
+        println("nenhuma condição satisfeita");
+    }
+
+    // Laços
+    for (int i = 0; i < 5; i = i + 1) {
+        println("for i = " + i);
+    }
+
+    while (a != 0) {
+        a = a - 1;
+    }
+
+    // Função scanf simulada
+    scanf("Digite um número: ", a);
+
+    // Uso de colchetes
+    int vetor[3] = {1, 2, 3};
+    println("vetor[0] = " + vetor[0]);
+
+    return 0;
+}

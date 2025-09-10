@@ -1,136 +1,98 @@
 grammar Expr;
 
-// ------------------ Parser rules ------------------
+// Regras de parser
+programa : 'void' 'main' PAREN1 PAREN2 CHAVE1 (declaracoes | comandos)* CHAVE2 EOF;
 
-program
-    : (declaration | stmt)* EOF
-    ;
+declaracoes : tipo ID (ATRIB expressao)? (VIRG ID (ATRIB expressao)?)* PVIRG
+            | tipo ID COLCH1 NUM_INT COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG;
 
-declaration
-    : (INT | FLOAT | CHAR | BOOLEAN | VOID) declarator (COMMA declarator)* SEMI
-    ;
+tipo : INT | FLOAT | CHAR | BOOLEAN | VOID;
 
-declarator
-    : ID (ASSIGN expr)?
-    ;
+comandos : comandoIf
+         | comandoWhile
+         | comandoFor
+         | comandoAtribuicao
+         | comandoPrint
+         | comandoScanf
+         | comandoReturn;
 
-stmt
-    : expr SEMI
-    | IF LPAREN expr RPAREN block ( ELSE block )?
-    | WHILE LPAREN expr RPAREN block
-    | FOR LPAREN (declaration | expr? SEMI) expr? SEMI expr? RPAREN block
-    | RETURN expr? SEMI
-    | block
-    ;
+comandoIf : IF PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2 (ELSE (comandoIf | CHAVE1 comandos* CHAVE2))?;
 
-block
-    : LBRACE (declaration | stmt)* RBRACE
-    ;
+comandoWhile : WHILE PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2;
 
-// expressions (precedence via separate rules)
-expr
-    : assignExpr
-    ;
+comandoFor : FOR PAREN1 (declaracaoFor PVIRG | comandoAtribuicao | PVIRG) expressao? PVIRG comandoAtribuicao? PAREN2 CHAVE1 comandos* CHAVE2;
 
-assignExpr
-    : logicOr (ASSIGN assignExpr)?
-    ;
+declaracaoFor : tipo ID ATRIB expressao; // Declaração sem PVIRG para o for
 
-logicOr
-    : logicAnd (OR logicAnd)*
-    ;
+comandoAtribuicao : ID ATRIB expressao PVIRG
+                  | ID COLCH1 expressao COLCH2 ATRIB expressao PVIRG;
 
-logicAnd
-    : equality (AND equality)*
-    ;
+comandoPrint : PRINTLN PAREN1 (expressao | TEXTO (SOMA expressao)*) PAREN2 PVIRG;
 
-equality
-    : relational ( ( '==' | '!=' ) relational )*
-    ;
+comandoScanf : SCANF PAREN1 TEXTO VIRG ID PAREN2 PVIRG;
 
-relational
-    : add ( ( '<' | '<=' | '>' | '>=' ) add )*
-    ;
+comandoReturn : RETURN expressao? PVIRG;
 
-add
-    : mul ( (PLUS | MINUS) mul )*
-    ;
+expressao : expressao (SOMA | SUB) expressao
+          | expressao (MUL | DIV | RESTO) expressao
+          | expressao (EQ | NEQ | LE | LT | GE | GT) expressao
+          | expressao (AND | OR) expressao
+          | PAREN1 expressao PAREN2
+          | NUM_INT
+          | NUM_DEC
+          | ID
+          | ID COLCH1 expressao COLCH2
+          | TRUE
+          | FALSE
+          | TEXTO;
 
-mul
-    : unary ( (MULT | DIV | MOD) unary )*
-    ;
+// Regras de lexer
+INT       : 'int' ;
+FLOAT     : 'float' ;
+CHAR      : 'char' ;
+BOOLEAN   : 'boolean' ;
+VOID      : 'void' ;
+IF        : 'if' ;
+ELSE      : 'else' ;
+FOR       : 'for' ;
+WHILE     : 'while' ;
+RETURN    : 'return' ;
+MAIN      : 'main' ;
+PRINTLN   : 'println' ;
+SCANF     : 'scanf' ;
+TRUE      : 'true' ;
+FALSE     : 'false' ;
 
-unary
-    : NOT unary
-    | PLUS unary
-    | MINUS unary
-    | primary
-    ;
+ATRIB     : '=' ;
+EQ        : '==' ;
+NEQ       : '!=' ;
+LE        : '<=' ;
+LT        : '<' ;
+GE        : '>=' ;
+GT        : '>' ;
+SOMA      : '+' ;
+SUB       : '-' ;
+MUL       : '*' ;
+DIV       : '/' ;
+RESTO     : '%' ;
+AND       : '&&' ;
+OR        : '||' ;
 
-primary
-    : LPAREN expr RPAREN
-    | NUM_DEC
-    | NUM_INT
-    | ID
-    | TEXTO
-    ;
+PVIRG     : ';' ;
+VIRG      : ',' ;
+PAREN1    : '(' ;
+PAREN2    : ')' ;
+CHAVE1    : '{' ;
+CHAVE2    : '}' ;
+COLCH1    : '[' ;
+COLCH2    : ']' ;
 
-// ------------------ Lexer rules ------------------
+NUM_DEC   : [0-9]+ '.' [0-9]+ ;
+NUM_INT   : [0-9]+ ;
+TEXTO     : '"' (~["\\] | '\\' .)* '"' ;
 
-// fragments for reuse
-fragment D : [0-9] ;
-fragment L : [a-zA-Z_] ;
+ID        : [a-zA-Z_][a-zA-Z0-9_]* ;
 
-// numbers & identifiers
-NUM_INT  : D+ ;
-NUM_DEC  : D+ '.' D+ ;
-ID       : L [a-zA-Z0-9_]* ;
+COMMENT   : '//' ~[\r\n]* -> skip ;
 
-// string literal (supports escaped chars inside)
-TEXTO
-    : '"' ( ~["\\\r\n] | '\\' . )* '"'
-    ;
-
-// keywords (use literals so they take precedence over ID if matched)
-INT     : 'int' ;
-FLOAT   : 'float' ;
-CHAR    : 'char' ;
-BOOLEAN : 'boolean' ;
-VOID    : 'void' ;
-IF      : 'if' ;
-ELSE    : 'else' ;
-FOR     : 'for' ;
-WHILE   : 'while' ;
-SCANF   : 'scanf' ;
-PRINTLN : 'println' ;
-MAIN    : 'main' ;
-RETURN  : 'return' ;
-
-// operators and punctuation
-ASSIGN  : '=' ;
-PLUS    : '+' ;
-MINUS   : '-' ;
-MULT    : '*' ;
-DIV     : '/' ;
-MOD     : '%' ;
-
-AND     : '&&' ;
-OR      : '||' ;
-NOT     : '!' ;
-
-// comparison operator token (each alternative is a literal)
-COMP    : '>=' | '>' | '<=' | '<' | '!=' | '==' ;
-
-// separate tokens for parentheses/brackets/braces/etc.
-LPAREN  : '(' ;
-RPAREN  : ')' ;
-LBRACK  : '[' ;
-RBRACK  : ']' ;
-LBRACE  : '{' ;
-RBRACE  : '}' ;
-COMMA   : ',' ;
-SEMI    : ';' ;
-
-// comments and whitespace
-COMMENT : '//' ~[\r\n]* -> skip ;
-WS      : [ \t\r\n]+ -> skip ;
+WS        : [ \t\r\n]+ -> skip ;
