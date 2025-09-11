@@ -1,55 +1,120 @@
 grammar Expr;
 
-// Regras de parser
-programa : 'void' 'main' PAREN1 PAREN2 CHAVE1 (declaracoes | comandos)* CHAVE2 EOF;
+// ---------------- Parser rules ----------------
 
-declaracoes : tipo ID (ATRIB expressao)? (VIRG ID (ATRIB expressao)?)* PVIRG
-            | tipo ID COLCH1 NUM_INT COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG;
+programa
+    : VOID MAIN PAREN1 PAREN2 CHAVE1 (declaracoes | comandos)* CHAVE2 EOF
+    ;
 
-tipo : INT | FLOAT | CHAR | BOOLEAN | VOID;
+declaracoes
+    : tipo ID (ATRIB expressao)? (VIRG ID (ATRIB expressao)?)* PVIRG
+    | tipo ID COLCH1 NUM_INT COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG
+    ;
 
-comandos : comandoIf
-         | comandoWhile
-         | comandoFor
-         | comandoAtribuicao
-         | comandoPrint
-         | comandoScanf
-         | comandoReturn;
+tipo
+    : INT | FLOAT | CHAR | BOOLEAN | VOID
+    ;
 
-comandoIf : IF PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2 (ELSE (comandoIf | CHAVE1 comandos* CHAVE2))?;
+comandos
+    : comandoIf
+    | comandoWhile
+    | comandoFor
+    | comandoAtribuicao
+    | comandoPrint
+    | comandoScanf
+    | comandoReturn
+    ;
 
-comandoWhile : WHILE PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2;
+comandoIf
+    : IF PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2 (ELSE (comandoIf | CHAVE1 comandos* CHAVE2))?
+    ;
 
-comandoFor : FOR PAREN1 forInit expressao PVIRG comandoAtribuicao PAREN2 CHAVE1 comandos* CHAVE2;
+comandoWhile
+    : WHILE PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2
+    ;
 
-forInit : tipo ID ATRIB expressao PVIRG // Declaração com PVIRG
-        | ID ATRIB expressao PVIRG      // Atribuição
-        | PVIRG;                        // Inicialização vazia
+// For clássico: init ; cond ; update
+comandoFor
+    : FOR PAREN1 forInit? PVIRG expressao? PVIRG assignExpr? PAREN2 CHAVE1 comandos* CHAVE2
+    ;
 
-comandoAtribuicao : ID ATRIB expressao PVIRG
-                  | ID COLCH1 expressao COLCH2 ATRIB expressao PVIRG;
+forInit
+    : tipo ID ATRIB expressao       // int i = 0
+    | ID ATRIB expressao            // i = 0
+    ;
 
-comandoPrint : PRINTLN PAREN1 (expressao | TEXTO (SOMA expressao)*) PAREN2 PVIRG;
+comandoAtribuicao
+    : ID ATRIB expressao PVIRG
+    | ID COLCH1 expressao COLCH2 ATRIB expressao PVIRG
+    ;
 
-comandoScanf : SCANF PAREN1 TEXTO VIRG ID PAREN2 PVIRG;
+comandoPrint
+    : PRINTLN PAREN1 (expressao | TEXTO (SOMA expressao)*) PAREN2 PVIRG
+    ;
 
-comandoReturn : RETURN expressao? PVIRG;
+comandoScanf
+    : SCANF PAREN1 TEXTO VIRG expressao PAREN2 PVIRG
+    ;
 
-expressao : expressao AND expressao
-          | expressao OR expressao
-          | expressao (EQ | NEQ | LE | LT | GE | GT) expressao
-          | expressao (SOMA | SUB) expressao
-          | expressao (MUL | DIV | RESTO) expressao
-          | PAREN1 expressao PAREN2
-          | NUM_INT
-          | NUM_DEC
-          | ID
-          | ID COLCH1 expressao COLCH2
-          | TRUE
-          | FALSE
-          | TEXTO;
+comandoReturn
+    : RETURN expressao? PVIRG
+    ;
 
-// Regras de lexer
+// ---------- Expressões com precedência ----------
+
+expressao
+    : assignExpr
+    ;
+
+assignExpr
+    : logicOr (ATRIB assignExpr)?
+    ;
+
+logicOr
+    : logicAnd (OR logicAnd)*
+    ;
+
+logicAnd
+    : equality (AND equality)*
+    ;
+
+equality
+    : relational ((EQ | NEQ) relational)*
+    ;
+
+relational
+    : add ((LT | LE | GT | GE) add)*
+    ;
+
+add
+    : mul ((SOMA | SUB) mul)*
+    ;
+
+mul
+    : unary ((MUL | DIV | RESTO) unary)*
+    ;
+
+unary
+    : SUB unary
+    | SOMA unary
+    | NOT unary
+    | primary
+    ;
+
+primary
+    : PAREN1 expressao PAREN2
+    | NUM_INT
+    | NUM_DEC
+    | ID
+    | ID COLCH1 expressao COLCH2
+    | TEXTO
+    | TRUE
+    | FALSE
+    ;
+
+// ---------------- Lexer rules ----------------
+
+// Keywords
 INT       : 'int' ;
 FLOAT     : 'float' ;
 CHAR      : 'char' ;
@@ -66,6 +131,7 @@ SCANF     : 'scanf' ;
 TRUE      : 'true' ;
 FALSE     : 'false' ;
 
+// Operators
 ATRIB     : '=' ;
 EQ        : '==' ;
 NEQ       : '!=' ;
@@ -80,7 +146,9 @@ DIV       : '/' ;
 RESTO     : '%' ;
 AND       : '&&' ;
 OR        : '||' ;
+NOT       : '!' ;
 
+// Delimiters
 PVIRG     : ';' ;
 VIRG      : ',' ;
 PAREN1    : '(' ;
@@ -90,12 +158,13 @@ CHAVE2    : '}' ;
 COLCH1    : '[' ;
 COLCH2    : ']' ;
 
+// Literals
 NUM_DEC   : [0-9]+ '.' [0-9]+ ;
 NUM_INT   : [0-9]+ ;
 TEXTO     : '"' (~["\\] | '\\' .)* '"' ;
 
 ID        : [a-zA-Z_][a-zA-Z0-9_]* ;
 
-COMMENT   : '//' ~[\r\n]* -> skip ;
-
+// Ignore
+COMMENT   : '//' ~[\r\n]* -> skip;
 WS        : [ \t\r\n]+ -> skip ;
