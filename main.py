@@ -9,33 +9,54 @@ class SymbolListener(ExprListener):
         self.symbols = []
         self.id_counter = 0
         self.id_map = {}
+        self.current_type = None  # Para rastrear o tipo durante declarações
+        self.expr_ids = []        # Para armazenar IDs de expressões temporariamente
+
+    def enterDeclaracoes(self, ctx):
+        # Inicializa o tipo e lista de IDs de expressões
+        self.current_type = ctx.tipo().getText()
+        self.expr_ids = []
+
+    def exitPrimary(self, ctx):
+        if ctx.ID():
+            ident = ctx.ID().getText()
+            if ident not in self.id_map:
+                # Não incrementa id_counter aqui; será feito em exitDeclaracoes
+                tipo = "boolean" if ident in ["true", "false"] else "unknown"
+                self.expr_ids.append((ident, tipo))
 
     def exitDeclaracoes(self, ctx):
-        tipo = ctx.tipo().getText()
-        # Declarações normais
-        if not ctx.COLCH1():  # Processa apenas se não for um array
+        # Processa identificadores declarados (ex.: cond, a, b, c, vetor)
+        if not ctx.COLCH1():  # Declarações normais
             for decl in ctx.ID():
                 ident = decl.getText()
                 if ident not in self.id_map:
                     self.id_map[ident] = self.id_counter
+                    self.symbols.append((self.id_map[ident], ident, self.current_type))
                     self.id_counter += 1
-                self.symbols.append((self.id_map[ident], ident, tipo))
         # Declarações de arrays
         if ctx.COLCH1():
             ident = ctx.ID(0).getText()
             if ident not in self.id_map:
                 self.id_map[ident] = self.id_counter
+                self.symbols.append((self.id_map[ident], ident, f"{self.current_type}[]"))
                 self.id_counter += 1
-            self.symbols.append((self.id_map[ident], ident, f"{tipo}[]"))
+        # Adiciona IDs de expressões (ex.: true) após os declarados
+        for ident, tipo in self.expr_ids:
+            if ident not in self.id_map:
+                self.id_map[ident] = self.id_counter
+                self.symbols.append((self.id_map[ident], ident, tipo))
+                self.id_counter += 1
+        self.expr_ids = []
+        self.current_type = None
 
     def exitForInit(self, ctx):
-        if ctx.tipo():  # Verifica se há uma declaração (tipo ID ATRIB expressao)
-            tipo = ctx.tipo().getText()
+        if ctx.tipo():
             ident = ctx.ID().getText()
             if ident not in self.id_map:
                 self.id_map[ident] = self.id_counter
+                self.symbols.append((self.id_map[ident], ident, ctx.tipo().getText()))
                 self.id_counter += 1
-            self.symbols.append((self.id_map[ident], ident, tipo))
 
 
 def main():

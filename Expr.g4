@@ -8,7 +8,7 @@ programa
 
 declaracoes
     : tipo ID (ATRIB expressao)? (VIRG ID (ATRIB expressao)?)* PVIRG
-    | tipo ID COLCH1 NUM_INT COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG
+    | tipo ID COLCH1 expressao COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG
     ;
 
 tipo
@@ -35,7 +35,7 @@ comandoWhile
 
 // For clássico: init ; cond ; update
 comandoFor
-    : FOR PAREN1 forInit? PVIRG expressao? PVIRG assignExpr? PAREN2 CHAVE1 comandos* CHAVE2
+    : FOR PAREN1 forInit? PVIRG expressao? PVIRG (ID ATRIB expressao)? PAREN2 CHAVE1 comandos* CHAVE2
     ;
 
 forInit
@@ -108,8 +108,6 @@ primary
     | ID
     | ID COLCH1 expressao COLCH2
     | TEXTO
-    | TRUE
-    | FALSE
     ;
 
 // ---------------- Lexer rules ----------------
@@ -128,8 +126,6 @@ RETURN    : 'return' ;
 MAIN      : 'main' ;
 PRINTLN   : 'println' ;
 SCANF     : 'scanf' ;
-TRUE      : 'true' ;
-FALSE     : 'false' ;
 
 // Operators
 ATRIB     : '=' ;
@@ -166,5 +162,5 @@ TEXTO     : '"' (~["\\] | '\\' .)* '"' ;
 ID        : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 // Ignore
-COMMENT   : '//' ~[\r\n]* -> skip;
+COMMENT   : '//' ~[\r\n]* -> skip ;
 WS        : [ \t\r\n]+ -> skip ;
