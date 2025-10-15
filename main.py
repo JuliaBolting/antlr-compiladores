@@ -13,10 +13,11 @@ class SymbolListener(ExprListener):
         self.expr_ids = []        # Para armazenar IDs de expressões temporariamente
 
     def enterDeclaracoes(self, ctx):
-        # Inicializa o tipo e lista de IDs de expressões
+        # Guarda o tipo de cada ID
         self.current_type = ctx.tipo().getText()
         self.expr_ids = []
 
+    # Verifica se id já existe na lista de símbolos
     def exitPrimary(self, ctx):
         if ctx.ID():
             ident = ctx.ID().getText()
@@ -42,6 +43,7 @@ class SymbolListener(ExprListener):
                 self.symbols.append((self.id_map[ident], ident, f"{self.current_type}[]"))
                 self.id_counter += 1
         # Adiciona IDs de expressões (ex.: true) após os declarados
+        # Se não for nenhuma das de cima vem aqui
         for ident, tipo in self.expr_ids:
             if ident not in self.id_map:
                 self.id_map[ident] = self.id_counter
@@ -50,6 +52,7 @@ class SymbolListener(ExprListener):
         self.expr_ids = []
         self.current_type = None
 
+    # Verifica variáveis dentro dos parenteses do for
     def exitForInit(self, ctx):
         if ctx.tipo():
             ident = ctx.ID().getText()
@@ -64,20 +67,7 @@ def main():
         with open('text.txt', encoding="utf-8") as exemplo:
             exemploTxt = exemplo.read()
 
-        input_stream = InputStream(exemploTxt)
-        
-        # Debug dos tokens com linha e coluna
-        lexer = ExprLexer(input_stream)
-        all_tokens = lexer.getAllTokens()
-        print(">>> Tokens reconhecidos pelo lexer:")
-        for t in all_tokens:
-            line = t.line
-            column = t.column + 1  # Ajuste para base 1
-            token_name = lexer.symbolicNames[t.type]
-            token_text = t.text
-            print(f"Linha {line} Coluna {column}\t{token_name}\t{token_text}")
-
-        # Reinicializa o lexer
+        # Primeiro: roda parser e listener para preencher id_map
         lexer = ExprLexer(InputStream(exemploTxt))
         stream = CommonTokenStream(lexer)
         parser = ExprParser(stream)
@@ -87,6 +77,20 @@ def main():
         walker = ParseTreeWalker()
         walker.walk(listener, tree)
 
+        # Agora: imprime tokens com IDs numerados
+        lexer = ExprLexer(InputStream(exemploTxt))
+        all_tokens = lexer.getAllTokens()
+        print(">>> Tokens reconhecidos pelo lexer:")
+        for t in all_tokens:
+            line = t.line
+            column = t.column + 1
+            token_name = lexer.symbolicNames[t.type]
+            token_text = t.text
+            if token_name == "ID" and token_text in listener.id_map:
+                token_text = f"{listener.id_map[token_text]}, {token_text}"
+            print(f"Linha {line} Coluna {column}\t{token_name}\t{token_text}")
+
+        # Lista final de símbolos
         print("\nLista de símbolos/ID:")
         for num, ident, tipo in listener.symbols:
             print(f"{num}: {ident} ({tipo})")

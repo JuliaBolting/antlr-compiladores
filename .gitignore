@@ -1,0 +1,33 @@
+# Ambiente virtual
+.venv/
+env/
+venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos temporários e de log
+*.log
+*.tmp
+*.swp
+
+# Arquivos gerados automaticamente pelo ANTLR
+*.tokens
+*.interp
+
+# Executáveis e jars
+antlr-*.jar
+
+# Configurações locais do VS Code
+.vscode/
+.idea/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Saídas temporárias de teste
+text.txt

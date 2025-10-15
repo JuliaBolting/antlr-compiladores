@@ -34,6 +34,7 @@ comandoWhile
     ;
 
 // For clássico: init ; cond ; update
+// for(i=0;i<9;i++) { comandos }
 comandoFor
     : FOR PAREN1 forInit? PVIRG expressao? PVIRG (ID ATRIB expressao)? PAREN2 CHAVE1 comandos* CHAVE2
     ;
