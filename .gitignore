@@ -31,3 +31,6 @@ Thumbs.db
 
 # Saídas temporárias de teste
 text.txt
+
+# Imagens geradas
+*.png
