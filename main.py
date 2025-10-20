@@ -1,7 +1,13 @@
+import os
 from antlr4 import InputStream, CommonTokenStream, ParseTreeWalker
 from ExprLexer import ExprLexer
 from ExprParser import ExprParser
 from ExprListener import ExprListener
+from graphviz import Digraph
+
+
+# ✅ Garante que o Python encontre o Graphviz
+os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
 
 
 class SymbolListener(ExprListener):
@@ -12,13 +18,12 @@ class SymbolListener(ExprListener):
 
     # Ao sair de uma lista de variáveis, adiciona os identificadores à tabela
     def exitListaVariaveis(self, ctx):
-        # Captura o último tipo da produção (se houver)
         tipo_ctx = ctx.tipo()
         if not tipo_ctx:
             # pode estar na forma recursiva: listaVariaveis tipo listaId PVIRG
             children = list(ctx.getChildren())
             for child in children:
-                if hasattr(child, "tipo"):  # procura tipo dentro dos filhos
+                if hasattr(child, "tipo"):
                     tipo_ctx = child.tipo()
                     if tipo_ctx:
                         break
@@ -41,6 +46,31 @@ class SymbolListener(ExprListener):
             self.id_map[ident] = self.id_counter
             self.symbols.append((self.id_counter, ident, "unknown"))
             self.id_counter += 1
+
+
+# 🔵 Função para desenhar árvore sintática
+def desenhar_arvore(tree, parser, nome_saida="parse_tree"):
+    dot = Digraph(comment='Árvore Sintática')
+    dot.attr("node", shape="box", style="rounded,filled", fillcolor="lightgrey")
+
+    contador = {"n": 0}
+
+    def adicionar_nos(no, pai=None):
+        nome_regra = parser.ruleNames[no.getRuleIndex()] if no.getChildCount() > 0 else no.getText()
+        nome_no = f"node{contador['n']}"
+        contador["n"] += 1
+        dot.node(nome_no, label=nome_regra)
+
+        if pai:
+            dot.edge(pai, nome_no)
+
+        for i in range(no.getChildCount()):
+            adicionar_nos(no.getChild(i), nome_no)
+
+    adicionar_nos(tree)
+
+    arquivo_saida = dot.render(filename=nome_saida, format="png", cleanup=True)
+    print(f"\n🌳 Árvore sintática salva em: {arquivo_saida}")
 
 
 def main():
@@ -79,6 +109,9 @@ def main():
                 print(f"{num}: {ident} ({tipo})")
         else:
             print("(nenhum símbolo encontrado)")
+
+        # Etapa 5 — Gera árvore sintática gráfica
+        desenhar_arvore(tree, parser)
 
         print("\n✅ Análise sintática concluída com sucesso!")
 
