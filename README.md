@@ -16,14 +16,13 @@ O projeto é voltado para aprendizado de compiladores e análise de linguagens.
 
 ## Estrutura do Projeto
 antlr/
-│
-├─ ExprLexer.g4 # Gramática do lexer
-├─ ExprParser.g4 # Gramática do parser
-├─ SymbolListener.py # Listener semântico
-├─ main.py # Script principal de execução
-├─ text.txt # Código-fonte de teste
-├─ parse_tree.png # Saída da árvore sintática (gerada)
-└─ README.md
+- ExprLexer.g4           # Gramática do lexer
+- ExprParser.g4          # Gramática do parser
+- SymbolListener.py      # Listener semântico
+- main.py                # Script principal de execução
+- text.txt               # Código-fonte de teste
+- parse_tree.png         # Saída da árvore sintática (gerada)
+- README.md              # Documentação do projeto
 
 ## Gramática da Linguagem
 
