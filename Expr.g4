@@ -1,119 +1,237 @@
 grammar Expr;
 
-// ---------------- Parser rules ----------------
+// -------------------- Parser Rules --------------------
 
 programa
-    : VOID MAIN PAREN1 PAREN2 CHAVE1 (declaracoes | comandos)* CHAVE2 EOF
+    : secaoFuncoes principal EOF
     ;
 
-declaracoes
-    : tipo ID (ATRIB expressao)? (VIRG ID (ATRIB expressao)?)* PVIRG
-    | tipo ID COLCH1 expressao COLCH2 (ATRIB CHAVE1 expressao (VIRG expressao)* CHAVE2)? PVIRG
+secaoFuncoes
+    : listaFuncoes
+    | /* vazio */
+    ;
+
+listaFuncoes
+    : decFuncao
+    | listaFuncoes decFuncao
+    ;
+
+decFuncao
+    : tipoRetorno ID PAREN1 parametros PAREN2 bloco
+    ;
+
+tipoRetorno
+    : tipo
+    | VOID
     ;
 
 tipo
-    : INT | FLOAT | CHAR | BOOLEAN | VOID
+    : tipoBase dimensao
     ;
 
-comandos
-    : comandoIf
-    | comandoWhile
-    | comandoFor
-    | comandoAtribuicao
-    | comandoPrint
-    | comandoScanf
-    | comandoReturn
+tipoBase
+    : CHAR
+    | FLOAT
+    | INT
+    | BOOLEAN
     ;
 
-comandoIf
-    : IF PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2 (ELSE (comandoIf | CHAVE1 comandos* CHAVE2))?
+dimensao
+    : dimensao COLCH1 NUM_INT COLCH2
+    | /* vazio */
     ;
 
-comandoWhile
-    : WHILE PAREN1 expressao PAREN2 CHAVE1 comandos* CHAVE2
+parametros
+    : listaParametros
+    | /* vazio */
     ;
 
-// For clássico: init ; cond ; update
-// for(i=0;i<9;i++) { comandos }
-comandoFor
-    : FOR PAREN1 forInit? PVIRG expressao? PVIRG (ID ATRIB expressao)? PAREN2 CHAVE1 comandos* CHAVE2
+listaParametros
+    : tipo ID
+    | listaParametros VIRG tipo ID
     ;
 
-forInit
-    : tipo ID ATRIB expressao       // int i = 0
-    | ID ATRIB expressao            // i = 0
+principal
+    : MAIN PAREN1 PAREN2 bloco
     ;
 
-comandoAtribuicao
-    : ID ATRIB expressao PVIRG
-    | ID COLCH1 expressao COLCH2 ATRIB expressao PVIRG
+bloco
+    : CHAVE1 secaoVariaveis secaoComandos CHAVE2
     ;
 
-comandoPrint
-    : PRINTLN PAREN1 (expressao | TEXTO (SOMA expressao)*) PAREN2 PVIRG
+secaoVariaveis
+    : listaVariaveis
+    | /* vazio */
     ;
 
-comandoScanf
-    : SCANF PAREN1 TEXTO VIRG expressao PAREN2 PVIRG
+listaVariaveis
+    : tipo listaId PVIRG
+    | listaVariaveis tipo listaId PVIRG
     ;
 
-comandoReturn
-    : RETURN expressao? PVIRG
+listaId
+    : ID
+    | listaId VIRG ID
     ;
 
-// ---------- Expressões com precedência ----------
-
-expressao
-    : assignExpr
+secaoComandos
+    : listaComandos
+    | /* vazio */
     ;
 
-assignExpr
-    : logicOr (ATRIB assignExpr)?
+listaComandos
+    : comando
+    | listaComandos comando
     ;
 
-logicOr
-    : logicAnd (OR logicAnd)*
+comando
+    : leitura
+    | escrita
+    | atribuicao
+    | chamadaFuncao
+    | selecao
+    | enquanto
+    | retorno
     ;
 
-logicAnd
-    : equality (AND equality)*
+leitura
+    : SCANF PAREN1 listaTermoLeitura PAREN2 PVIRG
     ;
 
-equality
-    : relational ((EQ | NEQ) relational)*
+listaTermoLeitura
+    : termoLeitura
+    | listaTermoLeitura VIRG termoLeitura
     ;
 
-relational
-    : add ((LT | LE | GT | GE) add)*
+termoLeitura
+    : ID dimensao2
     ;
 
-add
-    : mul ((SOMA | SUB) mul)*
+dimensao2
+    : dimensao2 COLCH1 exprAditiva COLCH2
+    | /* vazio */
     ;
 
-mul
-    : unary ((MUL | DIV | RESTO) unary)*
+escrita
+    : PRINTLN PAREN1 listaTermoEscrita PAREN2 PVIRG
     ;
 
-unary
-    : SUB unary
-    | SOMA unary
-    | NOT unary
-    | primary
+listaTermoEscrita
+    : termoEscrita
+    | listaTermoEscrita VIRG termoEscrita
     ;
 
-primary
-    : PAREN1 expressao PAREN2
-    | NUM_INT
-    | NUM_DEC
-    | ID
-    | ID COLCH1 expressao COLCH2
+termoEscrita
+    : ID dimensao2
+    | constante
     | TEXTO
     ;
 
-// ---------------- Lexer rules ----------------
+selecao
+    : IF PAREN1 expressao PAREN2 bloco senao
+    ;
 
-// Keywords
+senao
+    : ELSE bloco
+    | /* vazio */
+    ;
+
+enquanto
+    : WHILE PAREN1 expressao PAREN2 bloco
+    ;
+
+atribuicao
+    : ID ATRIB complemento PVIRG
+    ;
+
+complemento
+    : expressao
+    | chamadaFuncao
+    ;
+
+chamadaFuncao
+    : FUNC ID PAREN1 argumentos PAREN2
+    ;
+
+argumentos
+    : listaArgumentos
+    | /* vazio */
+    ;
+
+listaArgumentos
+    : expressao
+    | listaArgumentos VIRG expressao
+    ;
+
+retorno
+    : RETURN expressao PVIRG
+    ;
+
+// -------------------- Expressões --------------------
+
+expressao
+    : exprOu
+    ;
+
+exprOu
+    : exprE
+    | exprOu OR exprE
+    ;
+
+exprE
+    : exprRelacional
+    | exprE AND exprRelacional
+    ;
+
+exprRelacional
+    : exprAditiva
+    | exprAditiva opRelacional exprAditiva
+    ;
+
+opRelacional
+    : LT | LE | GT | GE | EQ | NEQ
+    ;
+
+exprAditiva
+    : exprMultiplicativa
+    | exprAditiva opAditivo exprMultiplicativa
+    ;
+
+opAditivo
+    : SOMA | SUB
+    ;
+
+exprMultiplicativa
+    : fator
+    | exprMultiplicativa opMultiplicativo fator
+    ;
+
+opMultiplicativo
+    : MUL | DIV | RESTO
+    ;
+
+fator
+    : sinal ID dimensao2
+    | sinal constante
+    | TEXTO
+    | NOT fator
+    | PAREN1 expressao PAREN2
+    ;
+
+constante
+    : NUM_INT
+    | NUM_DEC
+    ;
+
+sinal
+    : SOMA
+    | SUB
+    | /* vazio */
+    ;
+
+// -------------------- Lexer Rules --------------------
+
+// Palavras-chave
 INT       : 'int' ;
 FLOAT     : 'float' ;
 CHAR      : 'char' ;
@@ -127,8 +245,9 @@ RETURN    : 'return' ;
 MAIN      : 'main' ;
 PRINTLN   : 'println' ;
 SCANF     : 'scanf' ;
+FUNC      : 'func' ;
 
-// Operators
+// Operadores
 ATRIB     : '=' ;
 EQ        : '==' ;
 NEQ       : '!=' ;
@@ -145,7 +264,7 @@ AND       : '&&' ;
 OR        : '||' ;
 NOT       : '!' ;
 
-// Delimiters
+// Delimitadores
 PVIRG     : ';' ;
 VIRG      : ',' ;
 PAREN1    : '(' ;
@@ -155,13 +274,13 @@ CHAVE2    : '}' ;
 COLCH1    : '[' ;
 COLCH2    : ']' ;
 
-// Literals
+// Literais
 NUM_DEC   : [0-9]+ '.' [0-9]+ ;
 NUM_INT   : [0-9]+ ;
 TEXTO     : '"' (~["\\] | '\\' .)* '"' ;
 
 ID        : [a-zA-Z_][a-zA-Z0-9_]* ;
 
-// Ignore
+// Ignorar comentários e espaços
 COMMENT   : '//' ~[\r\n]* -> skip ;
 WS        : [ \t\r\n]+ -> skip ;
