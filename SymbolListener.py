@@ -21,7 +21,7 @@ class SymbolListener(ExprListener):
         # Atualiza o offset para o próximo símbolo.
         
         if self.is_declared_in_scope(name, self.context):
-            self.errors.append(f"Variável '{name}' já declarada em {self.context}.")
+            self.errors.append(f"Variável '{name}' já declarada em {self.context}. Linha {self.current_line if hasattr(self, 'current_line') else 'desconhecida'}")
             return
 
         width = self.get_width(tipo)
@@ -169,7 +169,7 @@ class SymbolListener(ExprListener):
         ids = self._collect_ids_from_list(lista_ctx)
         for name in ids:
             if not self.lookup(name):
-                self.errors.append(f"Variável '{name}' usada sem declaração em scanf.")
+                self.errors.append(f"Variável '{name}' usada sem declaração em scanf. Linha {ctx.start.line}")
                 
 
     # ----------- Gramática: chamadaFuncao : FUNC ID PAREN1 argumentos PAREN2 ;
@@ -186,9 +186,9 @@ class SymbolListener(ExprListener):
         if func_ids:
             nome_funcao = func_ids[0].getText()
             if nome_funcao not in self.functions:
-                self.errors.append(f"Função '{nome_funcao}' chamada sem declaração.")
+                self.errors.append(f"Função '{nome_funcao}' chamada sem declaração. Linha {ctx.start.line}")
         else:
-            self.errors.append("Chamada de função sem nome válido.")
+            self.errors.append("Chamada de função sem nome válido. Linha {ctx.start.line}")
 
         # Verifica argumentos para variáveis não declaradas (extração simples de ID)
         try:
@@ -202,7 +202,7 @@ class SymbolListener(ExprListener):
                     ids = self._collect_ids_from_list(lista_args)  # Assume expressões simples como ID
                     for name in ids:
                         if not self.lookup(name):
-                            self.errors.append(f"Variável '{name}' usada sem declaração em argumento de função.")
+                            self.errors.append(f"Variável '{name}' usada sem declaração em argumento de função. Linha {ctx.start.line}")
             except AttributeError:
                 pass
 
@@ -268,7 +268,7 @@ class SymbolListener(ExprListener):
             pass
 
         if nome_func in self.functions:
-            self.errors.append(f"Função '{nome_func}' já declarada.")
+            self.errors.append(f"Função '{nome_func}' já declarada. Linha {ctx.start.line}")
             return
 
         self.functions[nome_func] = {"retorno": tipo_retorno, "params": []}
@@ -405,7 +405,7 @@ class SymbolListener(ExprListener):
         nome_var = id_tokens[0].getText()
         symbol = self.lookup(nome_var)
         if not symbol:
-            self.errors.append(f"Variável '{nome_var}' usada sem declaração.")
+            self.errors.append(f"Variável '{nome_var}' usada sem declaração. Linha {ctx.start.line}")
             return
 
         tipo_var = symbol[2]
@@ -430,7 +430,7 @@ class SymbolListener(ExprListener):
                     if nome_funcao in self.functions:
                         tipo_expr = self.functions[nome_funcao]["retorno"]
                     else:
-                        self.errors.append(f"Função '{nome_funcao}' chamada sem declaração.")
+                        self.errors.append(f"Função '{nome_funcao}' chamada sem declaração. Linha {ctx.start.line}")
         except AttributeError:
             pass
         
@@ -442,7 +442,7 @@ class SymbolListener(ExprListener):
         if tipo_expr and tipo_var != tipo_expr:
             if not (tipo_var == "float" and tipo_expr == "int"):
                 self.errors.append(
-                    f"Tipo incompatível: '{nome_var}' é {tipo_var}, mas expressão é {tipo_expr}."
+                    f"Tipo incompatível: '{nome_var}' é {tipo_var}, mas expressão é {tipo_expr}. Linha {ctx.start.line}"
                 )
 
 
@@ -462,7 +462,7 @@ class SymbolListener(ExprListener):
                 if tipo_expr and tipo_expr != tipo_ret_func:
                     if not (tipo_ret_func == "float" and tipo_expr == "int"):  # Promoção implícita
                         self.errors.append(
-                            f"Retorno incompatível em '{self.current_function}': esperado {tipo_ret_func}, mas é {tipo_expr}."
+                            f"Retorno incompatível em '{self.current_function}': esperado {tipo_ret_func}, mas é {tipo_expr}. Linha {ctx.start.line}"
                         )
         except AttributeError:
             pass
@@ -481,7 +481,7 @@ class SymbolListener(ExprListener):
                 ids = self._collect_ids_from_list(lista_ctx)  # Reusa o helper pra IDs em termos
                 for name in ids:
                     if not self.lookup(name):
-                        self.errors.append(f"Variável '{name}' usada sem declaração em println.")
+                        self.errors.append(f"Variável '{name}' usada sem declaração em println. Linha {ctx.start.line}")
         except AttributeError:
             pass
 
@@ -494,7 +494,7 @@ class SymbolListener(ExprListener):
         
         tipo_cond = self.infer_type(ctx.expressao().getText())
         if tipo_cond != "boolean":
-            self.errors.append("Condição de if deve ser do tipo boolean.")
+            self.errors.append(f"Condição de if deve ser do tipo boolean. Linha {ctx.start.line}")
 
 
     # ----------------- Gramática: enquanto : WHILE PAREN1 expressao PAREN2 bloco ;
@@ -504,7 +504,7 @@ class SymbolListener(ExprListener):
         
         tipo_cond = self.infer_type(ctx.expressao().getText())
         if tipo_cond != "boolean":
-            self.errors.append("Condição de while deve ser do tipo boolean.")
+            self.errors.append(f"Condição de while deve ser do tipo boolean. Linha {ctx.start.line}")
 
 
     # -------------------- Gramática: expressao : exprOu ; (e sub-regras: exprOu, exprE, exprRelacional, etc.)
@@ -520,7 +520,7 @@ class SymbolListener(ExprListener):
             for token in ids:
                 name = token.getText()
                 if not self.lookup(name):
-                    self.errors.append(f"Variável '{name}' usada sem declaração em expressão.")
+                    self.errors.append(f"Variável '{name}' usada sem declaração em expressão. Linha {ctx.start.line}")
         except Exception:
             pass
         
@@ -529,7 +529,7 @@ class SymbolListener(ExprListener):
         # Exemplo: Pra relacional (>, <), assume boolean; adicione lógica por sub-regra se precisar
         if ">" in ctx.getText() or "<" in ctx.getText() or "==" in ctx.getText():
             if tipo_expr != "boolean":
-                self.errors.append("Operador relacional deve retornar boolean.")
+                self.errors.append(f"Operador relacional deve retornar boolean. Linha {ctx.start.line}")
 
 
     # ------------------- Gramática: dimensao : dimensao COLCH1 NUM_INT COLCH2 | /* vazio */ ; (arrays)
@@ -544,7 +544,7 @@ class SymbolListener(ExprListener):
             if num_ctx:
                 tamanho = int(num_ctx.getText())
                 if tamanho <= 0:
-                    self.errors.append("Dimensão de array deve ser positiva.")
+                    self.errors.append(f"Dimensão de array deve ser positiva. Linha {ctx.start.line}")
         except AttributeError:
             pass
 
@@ -558,7 +558,7 @@ class SymbolListener(ExprListener):
             tipo_esq = self.infer_type(ctx.getChild(0).getText())
             tipo_dir = self.infer_type(ctx.getChild(2).getText()) if ctx.getChildCount() > 2 else None
             if tipo_esq not in ["int", "float"] or (tipo_dir and tipo_dir not in ["int", "float"]):
-                self.errors.append(f"Operadores + ou - requerem operandos numéricos (int ou float).")
+                self.errors.append(f"Operadores + ou - requerem operandos numéricos (int ou float). Linha {ctx.start.line}")
 
 
     # ----------------- Gramática: exprOu : exprE | exprOu OR exprE ;
@@ -571,7 +571,7 @@ class SymbolListener(ExprListener):
             tipo_esq = self.infer_type(ctx.getChild(0).getText())
             tipo_dir = self.infer_type(ctx.getChild(2).getText()) if ctx.getChildCount() > 2 else None
             if tipo_esq != "boolean" or (tipo_dir and tipo_dir != "boolean"):
-                self.errors.append("Operador OR (||) requer operandos boolean.")
+                self.errors.append(f"Operador OR (||) requer operandos boolean. Linha {ctx.start.line}")
 
 
     # ---------------- Gramática: exprE : exprRelacional | exprE AND exprRelacional ;
@@ -584,7 +584,7 @@ class SymbolListener(ExprListener):
             tipo_esq = self.infer_type(ctx.getChild(0).getText())
             tipo_dir = self.infer_type(ctx.getChild(2).getText()) if ctx.getChildCount() > 2 else None
             if tipo_esq != "boolean" or (tipo_dir and tipo_dir != "boolean"):
-                self.errors.append("Operador AND (&&) requer operandos boolean.")
+                self.errors.append(f"Operador AND (&&) requer operandos boolean. Linha {ctx.start.line}")
 
 
     # ------------------ Gramática: exprRelacional : exprAditiva | exprAditiva opRelacional exprAditiva ;
@@ -605,9 +605,9 @@ class SymbolListener(ExprListener):
                 tipo_esq = self.infer_type(ctx.getChild(0).getText())
                 tipo_dir = self.infer_type(ctx.getChild(2).getText()) if ctx.getChildCount() > 2 else None
                 if tipo_esq not in ["int", "float"] or (tipo_dir and tipo_dir not in ["int", "float"]):
-                    self.errors.append(f"Operador '{op}' requer operandos numéricos.")
+                    self.errors.append(f"Operador '{op}' requer operandos numéricos. Linha {ctx.start.line}")
                 if op == '%' and (tipo_esq != "int" or (tipo_dir and tipo_dir != "int")):
-                    self.errors.append("Operador % (resto) requer operandos inteiros.")
+                    self.errors.append(f"Operador % (resto) requer operandos inteiros. Linha {ctx.start.line}")
                 break
 
 
@@ -620,7 +620,7 @@ class SymbolListener(ExprListener):
         if '!' in op_text:
             tipo_op = self.infer_type(ctx.getChild(1).getText() if ctx.getChildCount() > 1 else ctx.getText())
             if tipo_op != "boolean":
-                self.errors.append("Operador NOT (!) requer operando boolean.")
+                self.errors.append(f"Operador NOT (!) requer operando boolean. Linha {ctx.start.line}")
 
         # Checa ID em fator (ex.: !a ou -a)
         try:
@@ -628,7 +628,7 @@ class SymbolListener(ExprListener):
             if id_token:
                 name = id_token.getText()
                 if not self.lookup(name):
-                    self.errors.append(f"Variável '{name}' usada sem declaração em fator.")
+                    self.errors.append(f"Variável '{name}' usada sem declaração em fator. Linha {ctx.start.line}")
         except AttributeError:
             pass
 
