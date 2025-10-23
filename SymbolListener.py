@@ -118,6 +118,7 @@ class SymbolListener(ExprListener):
         # Registra IDs de listaId
         try:
             lista_id_ctx = ctx.listaId()
+            self.current_line = ctx.start.line
             if lista_id_ctx:
                 self._registrar_lista_ids(lista_id_ctx, tipo)
         except AttributeError:
@@ -473,7 +474,7 @@ class SymbolListener(ExprListener):
     # -------------- Gramática: termoEscrita : ID dimensao2 | constante | TEXTO ;
     def exitEscrita(self, ctx):
         
-        # Verifica variáveis usadas em println (ex.: checa declaração em IDs).
+        # Verifica variáveis usadas em println
         
         try:
             lista_ctx = ctx.listaTermoEscrita()
