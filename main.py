@@ -35,7 +35,7 @@ def main():
         with open('text.txt', encoding="utf-8") as f:
             code = f.read()
 
-        # Lexer e parser
+        # Lexer e sintático
         lexer = ExprLexer(InputStream(code))
         stream = CommonTokenStream(lexer)
         parser = ExprParser(stream)
@@ -54,9 +54,6 @@ def main():
 
         # Árvore
         desenhar_arvore(tree, parser)
-
-        # Resultados semânticos e tabela de símbolos
-        # listener.exitPrograma(tree)
 
     except FileNotFoundError:
         print("Arquivo 'text.txt' não encontrado.")
