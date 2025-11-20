@@ -61,8 +61,9 @@ def main():
         # IR generation
         print("\n>>> Código Intermediário (IR):")
         ir = IRCode()
-        codegen = CodeGenVisitor(ir, listener.symbols, listener.functions)
-        ir_code = codegen.visit(tree)
+        codegen = CodeGenVisitor(ir)
+        ir_obj = codegen.visit(tree)
+        ir_code = ir_obj.code
 
         for instr in ir_code:
             print(instr)
