@@ -7,6 +7,7 @@ from ExprParser import ExprParser
 from IR import IRCode
 from SymbolListener import SymbolListener
 from graphviz import Digraph
+from CBackend import CBackend
 
 # Garante que o Graphviz seja encontrado
 os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
@@ -60,6 +61,11 @@ def main():
         
         # IR generation
         print("\n>>> Código Intermediário (IR):")
+        print("\nInstrução\tA1\tA2\tDestino")
+        # Instrução: qual é a operação atual (código de instrução)
+        # A1: primeiro operando / dado principal
+        # A2: segundo operando / info extra
+        # Destino: “destino” (variável/temporário/label que recebe o resultado)
         ir = IRCode()
         codegen = CodeGenVisitor(ir)
         ir_obj = codegen.visit(tree)
