@@ -1,5 +1,5 @@
-from CompiladorVisitor import CompiladorVisitor
-from CompiladorParser import CompiladorParser
+from CodeGenVisitor import CompiladorVisitor
+from ExprParser import CompiladorParser
 
 class CodeGenVisitor(CompiladorVisitor):
     def __init__(self, ir):
