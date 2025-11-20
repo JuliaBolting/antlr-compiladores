@@ -1,7 +1,10 @@
 import os
 from antlr4 import InputStream, CommonTokenStream, ParseTreeWalker
+import CBackend
+from CodeGenVisitor import CodeGenVisitor
 from ExprLexer import ExprLexer
 from ExprParser import ExprParser
+from IR import IRCode
 from SymbolListener import SymbolListener
 from graphviz import Digraph
 
@@ -54,6 +57,24 @@ def main():
 
         # Árvore
         desenhar_arvore(tree, parser)
+        
+        # IR generation
+        print("\n>>> Código Intermediário (IR):")
+        ir = IRCode()
+        codegen = CodeGenVisitor(ir, listener.symbols, listener.functions)
+        ir_code = codegen.visit(tree)
+
+        for instr in ir_code:
+            print(instr)
+
+        # Backend C
+        backend = CBackend(ir_code)
+        c_code = backend.generate()
+
+        with open("output.c", "w") as f:
+            f.write(c_code)
+
+        print("\nArquivo 'output.c' gerado com sucesso!")
 
     except FileNotFoundError:
         print("Arquivo 'text.txt' não encontrado.")
