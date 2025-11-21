@@ -23,6 +23,7 @@ class CBackend:
         self.func_params = {}
         # Pré-passo só olhando IR de funções/parâmetros
         self._scan_functions()
+        self.current_function = None
 
 
     # --------------------------------------------------
@@ -176,11 +177,20 @@ class CBackend:
         #   visitDecFuncao (return implícito se void)
         #   visitPrincipal (RETURN None no fim de main)-
         if op == "RETURN":
+            # caso: main → int main() precisa retornar 0 quando não há valor
+            if self.current_function == "principal" and a1 is None:
+                self.emit("    return 0;")
+                return
+
+            # caso: função void normal → return; sem valor
             if a1 is None:
                 self.emit("    return;")
-            else:
-                self.emit(f"    return {a1};")
+                return
+
+            # caso: função com valor
+            self.emit(f"    return {a1};")
             return
+
 
 
         # ---------------- FUNC_START ----------------
@@ -195,6 +205,7 @@ class CBackend:
         #   - retornais "boolean" → int-
         if op == "FUNC_START":
             nome = a1 or "func"
+            self.current_function = nome
             ret_tipo = a2 or "void"
             if ret_tipo == "boolean":
                 ret_tipo = "int"
@@ -218,6 +229,7 @@ class CBackend:
         #   visitDecFuncao
         #   visitPrincipal
         if op == "FUNC_END":
+            self.current_function = None
             self.emit("}")
             self.emit("")  # linha em branco
             return
